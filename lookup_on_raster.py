@@ -1,5 +1,6 @@
 from osgeo import gdal, ogr
 import geopandas as gpd
+import glob
 from datetime import datetime
 import pandas as pd
 import os
@@ -50,15 +51,23 @@ def points_in_tile(points, raster_extent):
     return points_within_extent
 
 
+def dem_folder_lists(path_dem_folder):
+    path = path_dem_folder + "/*_10m_*.tif" # this is looking for _10m_ to identify the dems in all the sub folders
+    dem_list = glob.glob(path, recursive= True) # glob brings in * use like in linux, recursive looks in subfolders
+    return dem_list
+
+
 if __name__ == "__main__":
     path_release = r"/home/chris/Documents/Slushflow_db/"
     path_dem_folder = r"/home/chris/Documents/North_dem/Nedlastingspakke"
     release_points_path = path_release + '/slushflows.shp'
     points = gpd.read_file(release_points_path)
     #subset_poly = gpd.read_file(path +'\subset_poly.shp')
+    dem_list = dem_folder_lists(path_dem_folder) # this is a list of dem path names
+    print(dem_list)
     raster_extent = raster_extent(path_dem_folder + "/7504_3_10m_z33.tif")
     extent_points = points_in_tile(points, raster_extent)
-    print(extent_points)
+
 
 
     #lookup_raster(dem_raster_path,release_points_path)
