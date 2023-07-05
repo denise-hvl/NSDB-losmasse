@@ -1,6 +1,7 @@
 from osgeo import gdal, ogr
 import geopandas as gpd
 import glob
+import rasterio
 from datetime import datetime
 import pandas as pd
 import os
@@ -36,7 +37,7 @@ def lookup_raster(dem_raster_path,release_points_path):
     dem_dataset = None
     release_points_dataset = None
 
-def raster_extent(raster_path):
+def raster_extents(raster_path):
     raster_dataset = gdal.Open(raster_path)
     raster_extent = [
         raster_dataset.GetGeoTransform()[0],
@@ -64,10 +65,21 @@ if __name__ == "__main__":
     points = gpd.read_file(release_points_path)
     #subset_poly = gpd.read_file(path +'\subset_poly.shp')
     dem_list = dem_folder_lists(path_dem_folder) # this is a list of dem path names
-    print(dem_list)
-    raster_extent = raster_extent(path_dem_folder + "/7504_3_10m_z33.tif")
-    extent_points = points_in_tile(points, raster_extent)
+    for dem_tile in dem_list:
+        raster_extent = raster_extents(dem_tile)
+        dem_dataset = rasterio.open(dem_tile)
+        extent_points = points_in_tile(points, raster_extent)
+        for idx, point in extent_points.iterrows():
+            # Get the point's coordinates
+            point_x = point.geometry.x
+            point_y = point.geometry.y
 
+            # Get the pixel coordinates in the DEM raster corresponding to the point
+            row, col = dem_dataset.index(point_x, point_y)
+
+            # Get the elevation value at the pixel coordinates
+            elevation = dem_dataset.read(1)[row, col]
+        print(extent_points)
 
 
     #lookup_raster(dem_raster_path,release_points_path)
