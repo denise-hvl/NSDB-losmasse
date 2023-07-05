@@ -1,5 +1,5 @@
-from osgeo import gdal
-#import geopandas as gpd
+from osgeo import gdal, ogr
+import geopandas as gpd
 from datetime import datetime
 import pandas as pd
 import os
@@ -35,82 +35,30 @@ def lookup_raster(dem_raster_path,release_points_path):
     dem_dataset = None
     release_points_dataset = None
 
+def raster_extent(raster_path):
+    raster_dataset = gdal.Open(raster_path)
+    raster_extent = [
+        raster_dataset.GetGeoTransform()[0],
+        raster_dataset.GetGeoTransform()[0] + raster_dataset.RasterXSize * raster_dataset.GetGeoTransform()[1],
+        raster_dataset.GetGeoTransform()[3] + raster_dataset.RasterYSize * raster_dataset.GetGeoTransform()[5],
+        raster_dataset.GetGeoTransform()[3]
+    ]
+    return raster_extent
 
-def moasaic(dem_folder):
-    # Output mosaic file path
-    output_mosaic_path = 'path_to_output_mosaic.tif'
-
-    # Get a list of subfolders in the main DEM folder
-    subfolders = next(os.walk(dem_folder))[1]
-
-    # List to store the individual DEM datasets
-    dem_datasets = []
-
-    # Iterate over the subfolders and open each DEM file
-    for subfolder in subfolders:
-        subfolder_path = os.path.join(dem_folder, subfolder)
-        dem_file = next((f for f in os.listdir(subfolder_path) if f.endswith('.tif')), None)
+def points_in_tile(points, raster_extent):
+    points_within_extent = points.cx[raster_extent[0]:raster_extent[1], raster_extent[3]:raster_extent[2]]
+    return points_within_extent
 
 
-        if dem_file:
-            dem_path = os.path.join(subfolder_path, dem_file)
-            dem_dataset = gdal.Open(dem_path)
-
-            if dem_dataset:
-                dem_datasets.append(dem_dataset)
-            else:
-                print(f'Failed to open DEM file: {dem_path}')
-
-    # Check if any DEM datasets were found
-    if len(dem_datasets) == 0:
-        print('No DEM files found in the subfolders.')
-        exit()
-    else:
-        print("number of dems " , len(dem_datasets))
-    # Get the first DEM dataset to use as a reference
-    first_dem_dataset = dem_datasets[0]
-
-    # Get the geospatial information from the reference dataset
-    geotransform = first_dem_dataset.GetGeoTransform()
-    projection = first_dem_dataset.GetProjection()
-    cols = first_dem_dataset.RasterXSize
-    rows = first_dem_dataset.RasterYSize
-    band_count = first_dem_dataset.RasterCount
-    data_type = first_dem_dataset.GetRasterBand(1).DataType
-
-    # Create the output mosaic dataset
-    driver = gdal.GetDriverByName('GTiff')
-    mosaic_dataset = driver.Create(output_mosaic_path, cols, rows, band_count, data_type)
-    mosaic_dataset.SetGeoTransform(geotransform)
-    mosaic_dataset.SetProjection(projection)
-
-    # Iterate over the DEM datasets and merge them into the mosaic dataset
-    for i, dem_dataset in enumerate(dem_datasets):
-        for band_index in range(1, band_count + 1):
-            dem_band = dem_dataset.GetRasterBand(band_index)
-            mosaic_band = mosaic_dataset.GetRasterBand(band_index)
-
-            data = dem_band.ReadAsArray()
-            mosaic_band.WriteArray(data, 0, 0)
-
-            dem_band = None
-            mosaic_band = None
-
-        print(f'DEM {i+1} merged into the mosaic.')
-
-    # Close the mosaic dataset
-    mosaic_dataset = None
-
-    print('Mosaic creation completed.')
+if __name__ == "__main__":
+    path_release = r"/home/chris/Documents/Slushflow_db/"
+    path_dem_folder = r"/home/chris/Documents/North_dem/Nedlastingspakke"
+    release_points_path = path_release + '/slushflows.shp'
+    points = gpd.read_file(release_points_path)
+    #subset_poly = gpd.read_file(path +'\subset_poly.shp')
+    raster_extent = raster_extent(path_dem_folder + "/7504_3_10m_z33.tif")
+    extent_points = points_in_tile(points, raster_extent)
+    print(extent_points)
 
 
-path_release = r"/home/chris/Documents/Slushflow_db/"
-path_dem_folder = r"/home/chris/Documents/North_dem/Nedlastingspakke"
-release_points_path = path_release + '\subset_release.shp'
-#subset_poly = gpd.read_file(path +'\subset_poly.shp')
-
-# Path to your DEM raster file
-print("I made it here")
-
-moasaic(path_dem_folder)
-#lookup_raster(dem_raster_path,release_points_path)
+    #lookup_raster(dem_raster_path,release_points_path)
