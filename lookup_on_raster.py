@@ -1,5 +1,5 @@
-import gdal
-import geopandas as gpd
+from osgeo import gdal
+#import geopandas as gpd
 from datetime import datetime
 import pandas as pd
 import os
@@ -51,59 +51,61 @@ def moasaic(dem_folder):
         subfolder_path = os.path.join(dem_folder, subfolder)
         dem_file = next((f for f in os.listdir(subfolder_path) if f.endswith('.tif')), None)
 
-    if dem_file:
-        dem_path = os.path.join(subfolder_path, dem_file)
-        dem_dataset = gdal.Open(dem_path)
 
-        if dem_dataset:
-            dem_datasets.append(dem_dataset)
-        else:
-            print(f'Failed to open DEM file: {dem_path}')
+        if dem_file:
+            dem_path = os.path.join(subfolder_path, dem_file)
+            dem_dataset = gdal.Open(dem_path)
 
-# Check if any DEM datasets were found
-if len(dem_datasets) == 0:
-    print('No DEM files found in the subfolders.')
-    exit()
+            if dem_dataset:
+                dem_datasets.append(dem_dataset)
+            else:
+                print(f'Failed to open DEM file: {dem_path}')
 
-# Get the first DEM dataset to use as a reference
-first_dem_dataset = dem_datasets[0]
+    # Check if any DEM datasets were found
+    if len(dem_datasets) == 0:
+        print('No DEM files found in the subfolders.')
+        exit()
+    else:
+        print("number of dems " , len(dem_datasets))
+    # Get the first DEM dataset to use as a reference
+    first_dem_dataset = dem_datasets[0]
 
-# Get the geospatial information from the reference dataset
-geotransform = first_dem_dataset.GetGeoTransform()
-projection = first_dem_dataset.GetProjection()
-cols = first_dem_dataset.RasterXSize
-rows = first_dem_dataset.RasterYSize
-band_count = first_dem_dataset.RasterCount
-data_type = first_dem_dataset.GetRasterBand(1).DataType
+    # Get the geospatial information from the reference dataset
+    geotransform = first_dem_dataset.GetGeoTransform()
+    projection = first_dem_dataset.GetProjection()
+    cols = first_dem_dataset.RasterXSize
+    rows = first_dem_dataset.RasterYSize
+    band_count = first_dem_dataset.RasterCount
+    data_type = first_dem_dataset.GetRasterBand(1).DataType
 
-# Create the output mosaic dataset
-driver = gdal.GetDriverByName('GTiff')
-mosaic_dataset = driver.Create(output_mosaic_path, cols, rows, band_count, data_type)
-mosaic_dataset.SetGeoTransform(geotransform)
-mosaic_dataset.SetProjection(projection)
+    # Create the output mosaic dataset
+    driver = gdal.GetDriverByName('GTiff')
+    mosaic_dataset = driver.Create(output_mosaic_path, cols, rows, band_count, data_type)
+    mosaic_dataset.SetGeoTransform(geotransform)
+    mosaic_dataset.SetProjection(projection)
 
-# Iterate over the DEM datasets and merge them into the mosaic dataset
-for i, dem_dataset in enumerate(dem_datasets):
-    for band_index in range(1, band_count + 1):
-        dem_band = dem_dataset.GetRasterBand(band_index)
-        mosaic_band = mosaic_dataset.GetRasterBand(band_index)
+    # Iterate over the DEM datasets and merge them into the mosaic dataset
+    for i, dem_dataset in enumerate(dem_datasets):
+        for band_index in range(1, band_count + 1):
+            dem_band = dem_dataset.GetRasterBand(band_index)
+            mosaic_band = mosaic_dataset.GetRasterBand(band_index)
 
-        data = dem_band.ReadAsArray()
-        mosaic_band.WriteArray(data, 0, 0)
+            data = dem_band.ReadAsArray()
+            mosaic_band.WriteArray(data, 0, 0)
 
-        dem_band = None
-        mosaic_band = None
+            dem_band = None
+            mosaic_band = None
 
-    print(f'DEM {i+1} merged into the mosaic.')
+        print(f'DEM {i+1} merged into the mosaic.')
 
-# Close the mosaic dataset
-mosaic_dataset = None
+    # Close the mosaic dataset
+    mosaic_dataset = None
 
-print('Mosaic creation completed.')
+    print('Mosaic creation completed.')
 
 
-path_release = r"C:\Users\cda055\OneDrive - UiT Office 365\Impetus\Slushflow_db\NVE_60751B14_1683888916789_12228\NVEData\Skred_Skredhendelse"
-path_dem_folder = r"C:\Users\cda055\OneDrive - UiT Office 365\Impetus\North_dem\Nedlastingspakke"
+path_release = r"/home/chris/Documents/Slushflow_db/"
+path_dem_folder = r"/home/chris/Documents/North_dem/Nedlastingspakke"
 release_points_path = path_release + '\subset_release.shp'
 #subset_poly = gpd.read_file(path +'\subset_poly.shp')
 
