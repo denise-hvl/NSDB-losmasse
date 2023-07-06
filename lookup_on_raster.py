@@ -68,6 +68,27 @@ def dem_folder_lists(path_dem_folder, string_check):
     dem_list = glob.glob(path, recursive= True) # glob brings in * use like in linux, recursive looks in subfolders
     return dem_list
 
+def lookup_on_raster(raster_list, points): # loops over list of raster files and picks out values for each point
+    attribute_dict = {}
+    for raster_tile in raster_list:
+        raster_extent = raster_extents(raster_tile)
+        extent_points = points_in_tile(points, raster_extent)
+
+        raster_dataset = rasterio.open(raster_tile) # this opens the raster file
+
+        for idx, point in extent_points.iterrows():
+            # Get the point's coordinates
+            point_x = point.geometry.x
+            point_y = point.geometry.y
+
+            # Get the pixel coordinates in the DEM raster corresponding to the point
+            row, col = raster_dataset.index(point_x, point_y)
+
+            # Get the elevation value at the pixel coordinates
+            attribute = raster_dataset.read(1)[row, col]
+            attribute_dict[point["skredID"]]= attribute
+    return attribute_dict
+
 
 if __name__ == "__main__":
     path_release = r"/home/chris/Documents/Slushflow_db/"
@@ -76,22 +97,7 @@ if __name__ == "__main__":
     points = gpd.read_file(release_points_path)
     #subset_poly = gpd.read_file(path +'\subset_poly.shp')
     dem_list = dem_folder_lists(path_dem_folder, "/*_10m_*.tif" ) # this is a list of dem path names
-    elevation_dict = {}
-    for dem_tile in dem_list:
-        raster_extent = raster_extents(dem_tile)
-        dem_dataset = rasterio.open(dem_tile)
-        extent_points = points_in_tile(points, raster_extent)
-        for idx, point in extent_points.iterrows():
-            # Get the point's coordinates
-            point_x = point.geometry.x
-            point_y = point.geometry.y
-
-            # Get the pixel coordinates in the DEM raster corresponding to the point
-            row, col = dem_dataset.index(point_x, point_y)
-
-            # Get the elevation value at the pixel coordinates
-            elevation = dem_dataset.read(1)[row, col]
-            elevation_dict[point["skredID"]]= elevation
+    elevation_dict = lookup_on_raster(dem_list,points)
     points["elevation"] = points["skredID"].map(elevation_dict)
     print("done")
 
