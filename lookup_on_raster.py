@@ -48,12 +48,23 @@ def raster_extents(raster_path):
     return raster_extent
 
 def points_in_tile(points, raster_extent):
+    """
+    This function picks out the points that lay within one DEM tile.
+    :param points: a set of GIS points
+    :param raster_extent: outline of the rasters extent
+    :return: List of points that lay within the extent of the raster
+    """
     points_within_extent = points.cx[raster_extent[0]:raster_extent[1], raster_extent[3]:raster_extent[2]]
     return points_within_extent
 
 
-def dem_folder_lists(path_dem_folder):
-    path = path_dem_folder + "/*_10m_*.tif" # this is looking for _10m_ to identify the dems in all the sub folders
+def dem_folder_lists(path_dem_folder, string_check):
+    """
+    Makes a list of DEM files.
+    :param path_dem_folder:
+    :return: list of files containing the string
+    """
+    path = path_dem_folder + string_check # this is looking for _10m_ to identify the dems in all the sub folders
     dem_list = glob.glob(path, recursive= True) # glob brings in * use like in linux, recursive looks in subfolders
     return dem_list
 
@@ -64,7 +75,8 @@ if __name__ == "__main__":
     release_points_path = path_release + '/slushflows.shp'
     points = gpd.read_file(release_points_path)
     #subset_poly = gpd.read_file(path +'\subset_poly.shp')
-    dem_list = dem_folder_lists(path_dem_folder) # this is a list of dem path names
+    dem_list = dem_folder_lists(path_dem_folder, "/*_10m_*.tif" ) # this is a list of dem path names
+    elevation_dict = {}
     for dem_tile in dem_list:
         raster_extent = raster_extents(dem_tile)
         dem_dataset = rasterio.open(dem_tile)
@@ -79,7 +91,9 @@ if __name__ == "__main__":
 
             # Get the elevation value at the pixel coordinates
             elevation = dem_dataset.read(1)[row, col]
-        print(extent_points)
+            elevation_dict[point["skredID"]]= elevation
+    points["elevation"] = points["skredID"].map(elevation_dict)
+    print("done")
 
 
     #lookup_raster(dem_raster_path,release_points_path)
