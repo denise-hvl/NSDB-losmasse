@@ -96,7 +96,7 @@ if __name__ == "__main__":
     release_points_path = path_release + '/slushflows.shp'
     points = gpd.read_file(release_points_path)
     #subset_poly = gpd.read_file(path +'\subset_poly.shp')
-    dem_list = dem_folder_lists(path_dem_folder, "/*_10m_*.tif" ) # this is a list of dem path names
+    dem_list = dem_folder_lists(path_dem_folder, "/**/*_10m_*.tif" ) # this is a list of dem path names
     elevation_dict = lookup_on_raster(dem_list,points)
     points["elevation"] = points["skredID"].map(elevation_dict)
     print("done")

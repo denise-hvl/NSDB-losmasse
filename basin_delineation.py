@@ -11,8 +11,10 @@ import matplotlib as plt
 import lookup_on_raster
 from pysheds.grid import Grid
 
+
 path_dem_folder = r"/home/chris/Documents/North_dem/Nedlastingspakke"
-dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/*_10m_*.tif")
+dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/**/*_10m_z33.tif")
+
 
 for dem_path in dem_list:
     print(dem_path)
@@ -38,7 +40,7 @@ for dem_path in dem_list:
 
 
 
-
+"""
     #### plot routine
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
@@ -56,3 +58,4 @@ for dem_path in dem_list:
     plt.ylabel('Latitude')
     plt.tight_layout()
     plt.show()
+"""
