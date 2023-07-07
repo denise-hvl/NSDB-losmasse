@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 import os
 
+
 def lookup_raster(dem_raster_path,release_points_path):
     # Open the DEM raster using GDAL
     dem_dataset = gdal.Open(dem_raster_path)
@@ -70,12 +71,16 @@ def dem_folder_lists(path_dem_folder, string_check):
 
 def lookup_on_raster(raster_list, points): # loops over list of raster files and picks out values for each point
     attribute_dict = {}
+    attribute1_dict = {}
+    attribute2_dict = {}
     for raster_tile in raster_list:
+        path = os.path.dirname(raster_tile)
         raster_extent = raster_extents(raster_tile)
         extent_points = points_in_tile(points, raster_extent)
 
         raster_dataset = rasterio.open(raster_tile) # this opens the raster file
-
+        sinks_dataset = rasterio.open(path + "/sinks.tif")
+        uphill_dataset = rasterio.open(path + "/uphill_potential.tif")
         for idx, point in extent_points.iterrows():
             # Get the point's coordinates
             point_x = point.geometry.x
@@ -83,11 +88,17 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
 
             # Get the pixel coordinates in the DEM raster corresponding to the point
             row, col = raster_dataset.index(point_x, point_y)
+            row1, col1 = sinks_dataset.index(point_x, point_y)
+            row2, col2 = uphill_dataset.index(point_x, point_y)
 
             # Get the elevation value at the pixel coordinates
             attribute = raster_dataset.read(1)[row, col]
             attribute_dict[point["skredID"]]= attribute
-    return attribute_dict
+            attribute1 = sinks_dataset.read(1)[row1, col1]
+            attribute1_dict[point["skredID"]]= attribute1
+            attribute2 = uphill_dataset.read(1)[row2, col2]
+            attribute2_dict[point["skredID"]]= attribute2
+    return attribute_dict, attribute1_dict, attribute2_dict
 
 
 if __name__ == "__main__":
@@ -97,9 +108,13 @@ if __name__ == "__main__":
     points = gpd.read_file(release_points_path)
     #subset_poly = gpd.read_file(path +'\subset_poly.shp')
     dem_list = dem_folder_lists(path_dem_folder, "/**/*_10m_*.tif" ) # this is a list of dem path names
-    elevation_dict = lookup_on_raster(dem_list,points)
+    elevation_dict, sinks_dict, uphill_dict = lookup_on_raster(dem_list,points)
     points["elevation"] = points["skredID"].map(elevation_dict)
+    points["uphill potential"] = points["skredID"].map(uphill_dict)
+    points["sinks"] = points["skredID"].map(sinks_dict)
+    points.to_pickle(r"/home/chris/Documents/Slushflow_db/Ele_sink_uphill.pickle")
     print("done")
-
+    # todo make sink (true/false) uphill potential based on look_up_raster
+    # todo export the dataframe in a pickle
 
     #lookup_raster(dem_raster_path,release_points_path)
