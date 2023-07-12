@@ -4,13 +4,25 @@ import lookup_on_raster
 import os
 
 
-path_dem_folder = r"/home/chris/OneDrive/DEM/"
-dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/**/*_10m_z33.tif")
+path_dem_folder = r"/home/chris/OneDrive/dem50/"
+dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/**/*_50m_33.tif")
 
 for dem_path in dem_list:
+    if os.path.isdir(dem_path):
+        print("path continue ",dem_path)
+        continue
+    path = os.path.dirname(dem_path)  # this is the path name
+    file = os.path.basename(dem_path)  # this is the file name
+    if "sinks" in path:
+        print("sinks continue", dem_path)
+        continue
+    elif "uphill" in path:
+        print("uphill continue", dem_path)
+        continue
+    elif "slopes" in path:
+        continue
+    print(file)
     # Open the DEM raster
-    path = os.path.dirname(dem_path) # here is the path name
-    file = os.path.basename(dem_path) #this is the file name
     dem_dataset = gdal.Open(dem_path)
 
     # Read the DEM data into a numpy array

@@ -75,6 +75,8 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
     attribute2_dict = {}
     max_uphill_dict = {}
     min_sink_dict = {}
+    slopes_dict = {}
+    max_slope_dict = {}
     for raster_tile in raster_list:
         if os.path.isdir(raster_tile):
             continue
@@ -84,6 +86,8 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
             continue
         elif "uphill" in file:
             continue
+        elif "slopes" in file:
+            continue
         print(path, file)
         raster_extent = raster_extents(raster_tile)
         extent_points = points_in_tile(points, raster_extent)
@@ -91,6 +95,7 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
         raster_dataset = gdal.Open(raster_tile) # this opens the raster file
         sinks_dataset = gdal.Open(path + "/sinks/sinks" + file)
         uphill_dataset = gdal.Open(path + "/uphill/uphill" + file )
+        slopes_dataset = gdal.Open(path +"/slopes/slopes" +file)
         # Get the height and width of the raster
         raster_height = raster_dataset.RasterYSize
         raster_width = raster_dataset.RasterXSize
@@ -117,8 +122,12 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
             band_uphill = uphill_dataset.GetRasterBand(1)
             attribute2 = band_uphill.ReadAsArray(col, row, 1, 1)[0][0]
 
+            band_slopes = slopes_dataset.GetRasterBand(1)
+            slopes = band_slopes.ReadAsArray(col, row, 1, 1)[0][0]
+
             sink_values = []
             uphill_values = []
+            slopes_values = []
             for i in range(max(row - 1, 0), min(row + 2, raster_height)):
                 for j in range(max(col - 1, 0), min(col + 2, raster_width)):
 
@@ -131,11 +140,16 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
                     uphill_value = band_uphill.ReadAsArray(j, i, 1, 1)[0][0]
                     uphill_values.append(uphill_value)
 
+                    #slopes
+                    slopes_value = band_slopes.ReadAsArray(j, i, 1, 1)[0][0]
+                    slopes_values.append(slopes_value)
+
             min_sink = min(sink_values)
             min_sink_dict[point["skredID"]] = min_sink
             max_uphill = max(uphill_values)
             max_uphill_dict[point["skredID"]] = max_uphill
-
+            max_slope = max(slopes_values)
+            max_slope_dict[point["skredID"]] = max_slope
 
             # Get the elevation value at the pixel coordinates
             #attribute = raster_dataset.read(1)[row, col]
@@ -144,22 +158,33 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
             attribute1_dict[point["skredID"]]= attribute1
             #attribute2 = uphill_dataset.read(1)[row2, col2]
             attribute2_dict[point["skredID"]]= attribute2
-    return attribute_dict, attribute1_dict, attribute2_dict, min_sink_dict, max_uphill_dict
+            slopes_dict[point["skredID"]]= slopes
+    return attribute_dict, attribute1_dict, attribute2_dict, min_sink_dict, max_uphill_dict, slopes_dict, max_slope_dict
 
 
 if __name__ == "__main__":
     path_release = r"/home/chris/Documents/Slushflow_db/"
-    path_dem_folder = r"//home/chris/OneDrive/DEM/"
-    release_points_path = path_release + '/slushflows.shp'
-    points = gpd.read_file(release_points_path)
-    #subset_poly = gpd.read_file(path +'\subset_poly.shp')
-    dem_list = dem_folder_lists(path_dem_folder, "/**/*_10m_*.tif" ) # this is a list of dem path names
-    elevation_dict, sinks_dict, uphill_dict, min_sink_dict, max_uphill_dict = lookup_on_raster(dem_list,points)
-    points["elevation"] = points["skredID"].map(elevation_dict)
-    points["uphill potential"] = points["skredID"].map(uphill_dict)
-    points["sinks"] = points["skredID"].map(sinks_dict)
-    points["min_sinks"] = points["skredID"].map(min_sink_dict)
-    points["max_uphill"] = points["skredID"].map(max_uphill_dict)
+    string_list = ["/**/*_10m_*.tif", "/**/*_50m_*.tif"]
+    for string in string_list:
+        if "10" in string:
+            path_dem_folder = r"//home/chris/OneDrive/DEM/"
+        elif "50" in string:
+            path_dem_folder = r"//home/chris/OneDrive/dem50/"
+        else:
+            continue
+        release_points_path = path_release + '/slushflows.shp'
+        points = gpd.read_file(release_points_path)
+        #subset_poly = gpd.read_file(path +'\subset_poly.shp')
+        dem_list = dem_folder_lists(path_dem_folder, string ) # this is a list of dem path names
+        elevation_dict, sinks_dict, uphill_dict, min_sink_dict, max_uphill_dict, slopes_dict, max_slopes_dict  = lookup_on_raster(dem_list,points)
+        points["elevation_" + string] = points["skredID"].map(elevation_dict)
+        points["uphill potential_" + string] = points["skredID"].map(uphill_dict)
+        points["sinks_" + string] = points["skredID"].map(sinks_dict)
+        points["min_sinks_" + string] = points["skredID"].map(min_sink_dict)
+        points["max_uphill_" + string] = points["skredID"].map(max_uphill_dict)
+        points["slopes_" + string] = points["skredID"].map(slopes_dict)
+        points["max_slopes_" + string] = points["skredID"].map(max_slopes_dict)
+
     points.to_pickle(r"/home/chris/OneDrive/Impetus/Slushflow_db/Ele_sink_uphill.pickle")
     print("done")
 

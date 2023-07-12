@@ -12,8 +12,8 @@ import lookup_on_raster
 from pysheds.grid import Grid
 
 
-path_dem_folder = r"/home/chris/OneDrive/DEM/"
-dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/**/*_10m_z33.tif")
+path_dem_folder = r"/home/chris/OneDrive/dem50/"
+dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/**/*_50m_33.tif")
 
 
 for dem_path in dem_list:
