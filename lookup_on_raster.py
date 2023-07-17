@@ -164,26 +164,32 @@ def lookup_on_raster(raster_list, points): # loops over list of raster files and
 
 if __name__ == "__main__":
     path_release = r"/home/chris/Documents/Slushflow_db/"
+    release_points_path = path_release + '/slushflows.shp'
+    points = gpd.read_file(release_points_path)
+
     string_list = ["/**/*_10m_*.tif", "/**/*_50m_*.tif"]
     for string in string_list:
-        if "10" in string:
+        if "10m" in string:
             path_dem_folder = r"//home/chris/OneDrive/DEM/"
-        elif "50" in string:
+            addon = "10"
+        elif "50m" in string:
             path_dem_folder = r"//home/chris/OneDrive/dem50/"
+            addon = "50"
         else:
+            print("continue from string loop not not a dem file. ")
             continue
-        release_points_path = path_release + '/slushflows.shp'
-        points = gpd.read_file(release_points_path)
+
+
         #subset_poly = gpd.read_file(path +'\subset_poly.shp')
         dem_list = dem_folder_lists(path_dem_folder, string ) # this is a list of dem path names
         elevation_dict, sinks_dict, uphill_dict, min_sink_dict, max_uphill_dict, slopes_dict, max_slopes_dict  = lookup_on_raster(dem_list,points)
-        points["elevation_" + string] = points["skredID"].map(elevation_dict)
-        points["uphill potential_" + string] = points["skredID"].map(uphill_dict)
-        points["sinks_" + string] = points["skredID"].map(sinks_dict)
-        points["min_sinks_" + string] = points["skredID"].map(min_sink_dict)
-        points["max_uphill_" + string] = points["skredID"].map(max_uphill_dict)
-        points["slopes_" + string] = points["skredID"].map(slopes_dict)
-        points["max_slopes_" + string] = points["skredID"].map(max_slopes_dict)
+        points["elevation_" + addon] = points["skredID"].map(elevation_dict)
+        points["uphill potential_" + addon] = points["skredID"].map(uphill_dict)
+        points["sinks_" + addon] = points["skredID"].map(sinks_dict)
+        points["min_sinks_" + addon] = points["skredID"].map(min_sink_dict)
+        points["max_uphill_" + addon] = points["skredID"].map(max_uphill_dict)
+        points["slopes_" + addon] = points["skredID"].map(slopes_dict)
+        points["max_slopes_" + addon] = points["skredID"].map(max_slopes_dict)
 
     points.to_pickle(r"/home/chris/OneDrive/Impetus/Slushflow_db/Ele_sink_uphill.pickle")
     print("done")
