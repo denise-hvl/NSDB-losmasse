@@ -6,11 +6,12 @@ import pandas as pd
 import contextily as ctx
 #                   r"/home/chris/OneDrive/Impetus/Slushflow_db/Ele_sink_uphill.pickle"
 df1 = pd.read_pickle("/home/chris/OneDrive/Impetus/Slushflow_db/Ele_sink_uphill.pickle")
-grades = ['Godkjent kvalitet A', 'Godkjent kvalitet B'] #, "Godkjent kvalitet C"]
+grades = ['Godkjent kvalitet A', 'Godkjent kvalitet B' , "Godkjent kvalitet C"]
 
 
 filtered_df = df1[df1['regStatus'].isin(grades)]
 norway_path ="/home/chris/OneDrive/Impetus/Norway_shapefile/gadm41_NOR_0.shp"
+"""
 norway = gpd.read_file(norway_path)
 gdf_points = df1["geometry"].to_crs(epsg=4326)
 
@@ -46,20 +47,20 @@ ax_hist.set_ylim([57,72])
 plt.show()
 """
 # Create a box plot using matplotlib
-plt.figure(figsize=(8, 6))  # Optional: set the figure size
+
 
 # Group the data by quality grade and plot the box plots
-box_plot = filtered_df.boxplot(column='uphill potential_50', by='regStatus')
+box_plot = filtered_df.boxplot(column='slopes_10', by='regStatus')
 
 # Customize the plot
-plt.title('Elevation (10 m raster) Box Plot by Quality Grade')
+plt.title('Slopes Box Plot by Quality Grade')
 plt.xlabel('Quality Grade')
-plt.ylabel('Uphill potential')
+plt.ylabel('Slopes')
 grade_string = ["Quality A"," Quality B","Quality C"]
 box_plot.set_xticklabels(grade_string)
 plt.suptitle('')  # Remove the default 'Boxplot grouped by...'
-plt.show()
-"""
+
+
 
 
 # Create a figure and axes
@@ -78,8 +79,18 @@ ax.set_ylabel('Frequency')
 ax.set_title('Histogram of uphill potential (quality A and B)')
 ax.legend()
 
-# Show the plot
-plt.show()
+fig1, ax1 = plt.subplots()
+dfA = df1[df1['regStatus'] == 'Godkjent kvalitet A']
+dfB = df1[df1['regStatus'] == 'Godkjent kvalitet B']
+dfC = df1[df1['regStatus'] == 'Godkjent kvalitet C']
+ax1.scatter(dfC["elevation_10"], dfC["slopes_10"], label = "Quality C")
+ax1.scatter(dfB["elevation_10"], dfB["slopes_10"], label = "Quality B")
+ax1.scatter(dfA["elevation_10"], dfA["slopes_10"], label = "Quality A")
+ax1.set_xlabel('Elevation [m]')
+ax1.set_ylabel('Slope [deg]')
+ax1.set_title('Elevation vs slopes for 10m resolution')
+ax1.legend()
+
 """
 latitude = df1["geometry"].y
 latitude_filtered =filtered_df["geometry"].y

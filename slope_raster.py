@@ -4,8 +4,8 @@ import lookup_on_raster
 import os
 
 
-path_dem_folder = r"/home/chris/OneDrive/dem50/"
-dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/**/*_50m_33.tif")
+path_dem_folder = r"/home/chris/OneDrive/DEM/"
+dem_list = lookup_on_raster.dem_folder_lists(path_dem_folder, "/**/*_10m_z33.tif")
 
 for dem_path in dem_list:
     if os.path.isdir(dem_path):
@@ -24,12 +24,16 @@ for dem_path in dem_list:
     print(file)
     # Open the DEM raster
     dem_dataset = gdal.Open(dem_path)
-
+    gt = dem_dataset.GetGeoTransform()
+    resolution = gt[1]
+    #print("resolution ", resolution )
     # Read the DEM data into a numpy array
     dem_array = dem_dataset.ReadAsArray()
 
     # Calculate the slope in degrees using numpy gradient function
     slope_x, slope_y = np.gradient(dem_array)
+    slope_x = slope_x/resolution
+    slope_y = slope_y/resolution
     slope_radians = np.arctan(np.sqrt(slope_x**2 + slope_y**2))
     slope_degrees = np.degrees(slope_radians)
 
