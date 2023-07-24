@@ -4,7 +4,17 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import contextily as ctx
+import seaborn as sns
+from PIL import ImageColor
 
+class Colors:
+    def __init__(self):
+        self.colora = "#003f5c"
+        self.colorb = "#bc5090"
+        self.colorc = "#ffa600"
+        self.color10 = "#95E0E6"
+        self.color50 = "#95E69C"
+        self.color10N = "#9B95E6"
 
 def Map_plot(filtered_df):
     norway_path ="/home/chris/OneDrive/Impetus/Norway_shapefile/gadm41_NOR_0.shp"
@@ -50,65 +60,100 @@ def Map_plot(filtered_df):
     fig.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/map_of_events.png")
     plt.show()
 
-def slopes_box_plot(filter_df):
-    # Create a box plot using matplotlib
-    # Group the data by quality grade and plot the box plots
-    box_plot = filtered_df.boxplot(column='slopes_10', by='regStatus')
-
-    # Customize the plot
-    plt.title('Slopes Box Plot by Quality Grade')
-    plt.xlabel('Quality Grade')
-    plt.ylabel('Slopes')
+def Elevation_box_plot(filter_df):
+    c = Colors()
+    filter_df = filter_df.replace("Godkjent kvalitet","Quality",regex=True) #replace column name to english
+    colory = [c.colora,c.colorb,c.colorc]
+    # Set your custom color palette
+    sns.set_palette(sns.color_palette(colory))
+    sns.boxplot(x = "regStatus", y = "elevation_10", data = filter_df, order=["Quality A", "Quality B","Quality C"])
+    plt.title('Elevation Box Plot', fontsize = 24)
+    plt.xlabel('Quality Grade', fontsize = 20)
+    plt.ylabel('Elevation [m]', fontsize = 20)
     grade_string = ["Quality A"," Quality B","Quality C"]
-    box_plot.set_xticklabels(grade_string)
+    #plt.set_xticklabels(grade_string)
     plt.suptitle('')  # Remove the default 'Boxplot grouped by...'
+    plt.tick_params(axis='both', which='major', labelsize=16)
+    plt.tick_params(axis='both', which='major', labelsize=16)
+    plt.tight_layout()
+    plt.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/elevation_box_plot.png")
+
+def slopes_box_plot(filter_df):
+    c = Colors()
+    filter_df = filter_df.replace("Godkjent kvalitet", "Quality", regex=True)
+    colory = [c.colora, c.colorb, c.colorc]
+    # Set your custom color palette
+    sns.set_palette(sns.color_palette(colory))
+    sns.boxplot(x="regStatus", y="slopes_10", data=filter_df, order=["Quality A", "Quality B", "Quality C"])
+    plt.title('Slopes Box Plot by Quality Grade', fontsize=24)
+    plt.xlabel('Quality Grade', fontsize=20)
+    plt.ylabel('Slopes', fontsize=20)
+    plt.suptitle('')  # Remove the default 'Boxplot grouped by...'
+    plt.tick_params(axis='both', which='major', labelsize=16)
+    plt.tick_params(axis='both', which='major', labelsize=16)
+    plt.tight_layout()
+    plt.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/slopes_box_plot.png")
 
 def up_hilll_hist(filtered_df):
     # uphill potential plot
+    colors = Colors()
     fig, ax = plt.subplots()
 
-    bin_edges = list(range(0, 200, 5)) + [np.inf]
-    ax.hist([filtered_df['uphill potential_10'],filtered_df['max_uphill_50']], bins = bin_edges, label=["10m on point","Max from Neighbors "])
+    bin_edges = list(range(0, 100, 5)) + [np.inf]
+    ax.hist([filtered_df['uphill potential_10'],filtered_df['max_uphill_50']], bins = bin_edges, color = [colors.color10, colors.color10N], label=["10m on point","Max from Neighbors "])
     # Add labels, title, and legend
-    ax.set_xlabel('uphill potential (cells)')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Histogram of uphill potential (quality A and B)')
-    ax.legend()
+    ax.set_xlabel('uphill potential (cells)', fontsize = 20)
+    ax.set_ylabel('Frequency', fontsize = 20)
+    ax.set_title('Uphill potential (A & B)' , fontsize = 24)
+    ax.legend(fontsize = "16")
+    plt.tight_layout()
+    fig.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/uphill_hist.png")
 
+def slopes_elevation(df1):
+    colors = Colors()
     fig1, ax1 = plt.subplots()
     dfA = df1[df1['regStatus'] == 'Godkjent kvalitet A']
     dfB = df1[df1['regStatus'] == 'Godkjent kvalitet B']
     dfC = df1[df1['regStatus'] == 'Godkjent kvalitet C']
-    ax1.scatter(dfC["elevation_10"], dfC["slopes_10"], label = "Quality C")
-    ax1.scatter(dfB["elevation_10"], dfB["slopes_10"], label = "Quality B")
-    ax1.scatter(dfA["elevation_10"], dfA["slopes_10"], label = "Quality A")
-    ax1.set_xlabel('Elevation [m]')
-    ax1.set_ylabel('Slope [deg]')
-    ax1.set_title('Elevation vs slopes for 10m resolution')
-    ax1.legend()
+
+    ax1.scatter(dfA["elevation_10"], dfA["slopes_10"], color= colors.colora, label = "Quality A", zorder = 3)
+    ax1.scatter(dfB["elevation_10"], dfB["slopes_10"], color = colors.colorb, label = "Quality B", zorder = 2 )
+    ax1.scatter(dfC["elevation_10"], dfC["slopes_10"], color = colors.colorc, label="Quality C", zorder=1)
+    ax1.set_xlabel('Elevation [m]', fontsize = 20)
+    ax1.set_ylabel('Slope [deg]', fontsize = 20)
+    ax1.set_title('Elevation vs slopes (10 m DEM)', fontsize = 24)
+    ax1.legend(fontsize = "16")
+    plt.tight_layout()
+    fig1.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/uphill.png")
 
 def timeline(filtered_df):
     ####time bar plot
+    c = Colors()
     dates = pd.DataFrame()
     dates["dates"] = pd.to_datetime(filtered_df['regDato'])
     dates["regStatus"]= filtered_df["regStatus"]
     yearly_counts = dates.groupby([dates['dates'].dt.year, 'regStatus']).size().unstack(fill_value=0)
     # Combine the counts for years before 2004 into an overflow bin
+    before2004 = yearly_counts[yearly_counts.index <2004]['Godkjent kvalitet C'].sum()
     mask = yearly_counts.index < 2004
-    overflow_counts = pd.Series(yearly_counts[mask].sum(), index=['Before 2004'])
-    yearly_counts = pd.concat([overflow_counts, yearly_counts[~mask]])
-    # Reset the index of yearly_counts
-    yearly_counts.reset_index(inplace=True)
+    yearly_counts.index = yearly_counts.index.astype(int).astype(str) # convert years in index to a string
+    new_row =pd.DataFrame({"Godkjent kvalitet A": 0,"Godkjent kvalitet B": 0,"Godkjent kvalitet C": before2004}, index =["1951 - 2004"])
+    yearly_counts = pd.concat([new_row,yearly_counts[~mask]])
 
     plt.figure(figsize=(10, 6))
-    colors = {'Godkjent kvalitet A': 'tab:blue', 'Godkjent kvalitet B': 'tab:orange', 'Godkjent kvalitet C': 'tab:green' }
-    yearly_counts.plot(kind='bar', stacked = True, edgecolor='black',colormap=plt.cm.tab20,)
+    yearly_counts = yearly_counts[yearly_counts.columns[::-1]]
+    ax = yearly_counts.plot(kind='bar', stacked = True,edgecolor='black',color=[c.colorc,c.colorb,c.colora],)
     plt.xlabel('Year', fontsize = 20)
     plt.ylabel('Number of Events', fontsize =20)
     plt.title('Yearly Events Histogram', fontsize= 20)
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
+    handles, labels = ax.get_legend_handles_labels()
+    labels = ["Quality A","Quality B","Quality C"]
+    ax.legend(reversed(handles), labels, fontsize = 16)
+
     plt.tight_layout()
-    plt.show()
+    plt.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/timeline.png")
+
 
 def sink_stats(filtered_df):
     # Count the occurrences of 1 and 0 in the 'sinks' column
@@ -120,9 +165,15 @@ def sink_stats(filtered_df):
     # Create a bar plot
 
 
+
 df1 = pd.read_pickle("/home/chris/OneDrive/Impetus/Slushflow_db/Ele_sink_uphill.pickle")
 grades = ['Godkjent kvalitet A', 'Godkjent kvalitet B' , "Godkjent kvalitet C"]
 filtered_df = df1[df1['regStatus'].isin(grades)]
-
+#slopes_box_plot(filtered_df)
+#Elevation_box_plot(filtered_df)
+#timeline(filtered_df) # done
+#up_hilll_hist(filtered_df) # done
+#slopes_elevation(df1) # done
+plt.show()
 # Use value_counts() to get unique strings and their frequencies
 #reg_status_counts = df1['regStatus'].value_counts()
