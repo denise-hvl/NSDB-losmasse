@@ -13,7 +13,7 @@ class Colors:
         self.colorb = "#bc5090"
         self.colorc = "#ffa600"
         self.color10 = "#95E0E6"
-        self.color50 = "#95E69C"
+        self.color50 = "#B7E695"
         self.color10N = "#9B95E6"
 
 def Map_plot(filtered_df):
@@ -32,7 +32,6 @@ def Map_plot(filtered_df):
     norway = norway.to_crs(epsg=4326)  # Project to web mercator for the basemap
     norway.plot(ax=ax_map, color='lightgray', edgecolor='black', alpha=0.7)
     # Add Stamen Terrain basemap from contextily
-
 
     #norway.plot(ax=ax, color='lightgray', edgecolor='black')
 
@@ -67,6 +66,7 @@ def Elevation_box_plot(filter_df):
     # Set your custom color palette
     sns.set_palette(sns.color_palette(colory))
     sns.boxplot(x = "regStatus", y = "elevation_10", data = filter_df, order=["Quality A", "Quality B","Quality C"])
+    plt.figsize = (6.4,4.8)
     plt.title('Elevation Box Plot', fontsize = 24)
     plt.xlabel('Quality Grade', fontsize = 20)
     plt.ylabel('Elevation [m]', fontsize = 20)
@@ -100,18 +100,45 @@ def up_hilll_hist(filtered_df):
     fig, ax = plt.subplots()
 
     bin_edges = list(range(0, 100, 5)) + [np.inf]
-    ax.hist([filtered_df['uphill potential_10'],filtered_df['max_uphill_50']], bins = bin_edges, color = [colors.color10, colors.color10N], label=["10m on point","Max from Neighbors "])
+    ax.hist([filtered_df['uphill potential_10'],filtered_df['uphill potential_50']], bins = bin_edges, color = [colors.color10, colors.color50], label=["10 m DEM","50 m DEM "])
     # Add labels, title, and legend
-    ax.set_xlabel('uphill potential (cells)', fontsize = 20)
+    ax.set_xlabel('Uphill potential (cells)', fontsize = 20)
     ax.set_ylabel('Frequency', fontsize = 20)
-    ax.set_title('Uphill potential (A & B)' , fontsize = 24)
+    ax.set_title('Uphill potential' , fontsize = 24)
     ax.legend(fontsize = "16")
     plt.tight_layout()
     fig.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/uphill_hist.png")
 
+    fig1, ax1 = plt.subplots()
+    bin_edges = list(range(0, 100, 5)) + [np.inf]
+    ax1.hist([filtered_df['uphill potential_10'], filtered_df['max_uphill_10']], bins=bin_edges,
+            color=[colors.color10, colors.color10N], label=["On location", "Max from Neighbors "])
+    # Add labels, title, and legend
+    ax1.set_xlabel('Uphill potential (cells)', fontsize=20)
+    ax1.set_ylabel('Frequency', fontsize=20)
+    ax1.set_title('Uphill potential', fontsize=24)
+    ax1.legend(fontsize="16")
+    plt.tight_layout()
+    fig1.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/uphill_neighbor_hist.png")
+
+def elevation_hist(filtered_df):
+    # uphill potential plot
+    colors = Colors()
+    fig, ax = plt.subplots(figsize = (6.4,4.8))
+    bin_edges = list(range(0, 100, 5)) + [np.inf]
+    ax.hist([filtered_df['elevation_10'],filtered_df['elevation_50']], bins = bin_edges, color = [colors.color10, colors.color50], label=["10 m DEM","50 m DEM "])
+    # Add labels, title, and legend
+    ax.set_xlabel('Elevation [m]', fontsize = 20)
+    ax.set_ylabel('Frequency', fontsize = 20)
+    ax.set_title('Elevation ' , fontsize = 24)
+    ax.legend(fontsize = "16")
+    plt.tight_layout()
+    fig.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/elevation_hist.png")
+
+
 def slopes_elevation(df1):
     colors = Colors()
-    fig1, ax1 = plt.subplots()
+    fig1, ax1 = plt.subplots(figsize = (6.4,4.8))
     dfA = df1[df1['regStatus'] == 'Godkjent kvalitet A']
     dfB = df1[df1['regStatus'] == 'Godkjent kvalitet B']
     dfC = df1[df1['regStatus'] == 'Godkjent kvalitet C']
@@ -124,7 +151,7 @@ def slopes_elevation(df1):
     ax1.set_title('Elevation vs slopes (10 m DEM)', fontsize = 24)
     ax1.legend(fontsize = "16")
     plt.tight_layout()
-    fig1.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/uphill.png")
+    fig1.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/slope_elevation.png")
 
 def timeline(filtered_df):
     ####time bar plot
@@ -140,7 +167,7 @@ def timeline(filtered_df):
     new_row =pd.DataFrame({"Godkjent kvalitet A": 0,"Godkjent kvalitet B": 0,"Godkjent kvalitet C": before2004}, index =["1951 - 2004"])
     yearly_counts = pd.concat([new_row,yearly_counts[~mask]])
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize = (6.4,4.8))
     yearly_counts = yearly_counts[yearly_counts.columns[::-1]]
     ax = yearly_counts.plot(kind='bar', stacked = True,edgecolor='black',color=[c.colorc,c.colorb,c.colora],)
     plt.xlabel('Year', fontsize = 20)
@@ -154,7 +181,6 @@ def timeline(filtered_df):
     plt.tight_layout()
     plt.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/timeline.png")
 
-
 def sink_stats(filtered_df):
     # Count the occurrences of 1 and 0 in the 'sinks' column
     sink_counts50 = filtered_df['sinks_50'].value_counts()
@@ -165,15 +191,15 @@ def sink_stats(filtered_df):
     # Create a bar plot
 
 
-
 df1 = pd.read_pickle("/home/chris/OneDrive/Impetus/Slushflow_db/Ele_sink_uphill.pickle")
 grades = ['Godkjent kvalitet A', 'Godkjent kvalitet B' , "Godkjent kvalitet C"]
 filtered_df = df1[df1['regStatus'].isin(grades)]
-#slopes_box_plot(filtered_df)
-#Elevation_box_plot(filtered_df)
-#timeline(filtered_df) # done
-#up_hilll_hist(filtered_df) # done
-#slopes_elevation(df1) # done
+slopes_box_plot(filtered_df)
+Elevation_box_plot(filtered_df)
+elevation_hist(filtered_df)
+timeline(filtered_df) # done
+up_hilll_hist(filtered_df) # done
+slopes_elevation(df1) # done
 plt.show()
 # Use value_counts() to get unique strings and their frequencies
 #reg_status_counts = df1['regStatus'].value_counts()
