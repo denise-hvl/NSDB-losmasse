@@ -15,40 +15,43 @@ class Colors:
         self.color10 = "#95E0E6"
         self.color50 = "#B7E695"
         self.color10N = "#9B95E6"
+        self.colord = "#C5C9C7"
 
 def Map_plot(filtered_df):
-    norway_path ="/home/chris/OneDrive/Impetus/Norway_shapefile/gadm41_NOR_0.shp"
-
+    c = Colors()
+    norway_path ="/home/chris/OneDrive/Impetus/Norway_shapefile/gadm41_NOR_0.shp" # path to a map of norway
     norway = gpd.read_file(norway_path)
-    gdf_points = df1["geometry"].to_crs(epsg=4326)
-    filtered_df = filtered_df["geometry"].to_crs(epsg=4326)
-    sub_arctic =filtered_df[filtered_df.y < 65]
-    print( "not arctic ", len(sub_arctic), len(filtered_df))
-    # Plot the map of Norway
-    # Create subplots: one for the map and one for the histogram
-    fig, (ax_map, ax_hist) = plt.subplots(1, 2, figsize=(16, 8),sharey = True)
-
-    # Plot the basemap of Norway using contextily
+    gdf_points = filtered_df["geometry"].to_crs(epsg=4326)      # this is event point to be plotted on the map
+    filtered_df["geometry"] = filtered_df["geometry"].to_crs(epsg=4326)     #change into coordnate system such that y values is latitude
     norway = norway.to_crs(epsg=4326)  # Project to web mercator for the basemap
-    norway.plot(ax=ax_map, color='lightgray', edgecolor='black', alpha=0.7)
-    # Add Stamen Terrain basemap from contextily
 
-    #norway.plot(ax=ax, color='lightgray', edgecolor='black')
+    fig, (ax_map, ax_hist) = plt.subplots(1, 2, figsize=(6.4, 4.8),sharey = True)
 
-    # Plot the points on the map
+    # map side
+    norway.plot(ax=ax_map, color='lightgray', edgecolor='black', alpha=0.7) # base map of norway
     gdf_points.plot(ax=ax_map, color='red', markersize=5)
-
-    # Set plot title
     ax_map.set_title('Map of Norway with Points', fontsize = 24)
     ax_map.set_xlim([0, 35])
     ax_map.set_ylim([57,72])
     ax_hist.set_ylim([57,72])
     ax_map.set_xlabel('Longitude', fontsize = 20)
     ax_map.set_ylabel("Latitude", fontsize = 20)
-    # Show the plot
+
     # Create a histogram of latitudes on the right axis (ax_hist)
-    latitudes = gdf_points.y
-    ax_hist.hist(latitudes, bins=20, edgecolor='black', color='blue',orientation="horizontal")
+    dataframe = pd.DataFrame()
+    dfA = filtered_df[filtered_df['regStatus'] == 'Godkjent kvalitet A']
+    dfB = filtered_df[filtered_df['regStatus'] == 'Godkjent kvalitet B']
+    dfC = filtered_df[filtered_df['regStatus'] == 'Godkjent kvalitet C']
+    dfD = filtered_df[filtered_df["regStatus"].str.contains('Registrert', case=False)]
+    A = dfA["geometry"].to_crs(epsg=4326)
+    B = dfB["geometry"].to_crs(epsg=4326)
+    C = dfC["geometry"].to_crs(epsg=4326)
+    D = dfD["geometry"].to_crs(epsg=4326)
+
+    latitudes = [D.y, C.y, B.y,A.y]
+    colors = [c.colord, c.colorc, c.colorb, c.colora]
+
+    ax_hist.hist(latitudes, bins=20, stacked = True, color = colors, edgecolor='black',orientation="horizontal",label = ["Quality A", "Quality B", "Quality C", "Quality D"])
     #ax_map.set_ylabel('Latitude')
     ax_hist.set_xlabel('Frequency', fontsize = 20)
     ax_hist.set_title('Histogram of Latitudes', fontsize = 24)
@@ -56,8 +59,15 @@ def Map_plot(filtered_df):
     ax_hist.tick_params(axis='both', which='major', labelsize=20)
     #ax.tick_params(axis='both', which='minor', labelsize=8)
     ax_hist.set_ylim([57,72])
+    handles, labels = ax_hist.get_legend_handles_labels()
+
+    ax_hist.legend(reversed(handles), labels, fontsize=16)
+    fig.tight_layout()
     fig.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/map_of_events.png")
-    plt.show()
+
+    # print statis on how many slushflows happen in arctic/sub-arctic
+    #sub_arctic =filtered_df[filtered_df.y < 65] #
+    #print( "not arctic ", len(sub_arctic), len(filtered_df))
 
 def Elevation_box_plot(filter_df):
     c = Colors()
@@ -135,7 +145,6 @@ def elevation_hist(filtered_df):
     plt.tight_layout()
     fig.savefig(r"/home/chris/OneDrive/talks/ISSW2023/figs/elevation_hist.png")
 
-
 def slopes_elevation(df1):
     colors = Colors()
     fig1, ax1 = plt.subplots(figsize = (6.4,4.8))
@@ -194,12 +203,13 @@ def sink_stats(filtered_df):
 df1 = pd.read_pickle("/home/chris/OneDrive/Impetus/Slushflow_db/Ele_sink_uphill.pickle")
 grades = ['Godkjent kvalitet A', 'Godkjent kvalitet B' , "Godkjent kvalitet C"]
 filtered_df = df1[df1['regStatus'].isin(grades)]
-slopes_box_plot(filtered_df)
+#slopes_box_plot(filtered_df)
 Elevation_box_plot(filtered_df)
-elevation_hist(filtered_df)
-timeline(filtered_df) # done
-up_hilll_hist(filtered_df) # done
-slopes_elevation(df1) # done
+#elevation_hist(filtered_df)
+#timeline(filtered_df) # done
+#up_hilll_hist(filtered_df) # done
+#slopes_elevation(df1) # done
+#Map_plot(df1)
 plt.show()
 # Use value_counts() to get unique strings and their frequencies
 #reg_status_counts = df1['regStatus'].value_counts()
