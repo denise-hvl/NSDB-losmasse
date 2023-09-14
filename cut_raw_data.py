@@ -1,7 +1,7 @@
 
-import geopandas as gpd
-import pandas as pd
 
+import pandas as pd
+import geopandas as gpd
 
 if __name__ == '__main__':
     #load the full database
