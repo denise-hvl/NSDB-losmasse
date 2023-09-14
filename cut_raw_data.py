@@ -18,16 +18,16 @@ if __name__ == '__main__':
     date2 = pd.to_datetime('2023-08-12')
 
     # point_data = the dataframe before it is cut for the dates, df is the dataframe after
-    df = point_data.loc[(gdf['date'] >= date1) & (gdf['date'] <= date2)]
+    point_data_hans = point_data.loc[(point_data['skredTidspunkt'] >= date1) & (point_data['skredTidspunkt'] <= date2)]
 
     # find points in column skredType with tag either 140 (Løsmassedskred, uspesifisert), 142 (Flomskred), 143 (Leirskred), 144 (Jordskred) or 145 (Jordskred, uspesifisert)
-    losmasseskred = df[point_data[{'skredType'== 140}, {'skredType'== 142}, {'skredType'== 143}, {'skredType'== 144}, {'skredType'== 145}] 
+    losmasseskred_hans = point_data_hans[{'skredType'== 140}, {'skredType'== 142}, {'skredType'== 143}, {'skredType'== 144}, {'skredType'== 145}] 
 
     # Find unique ID values for the skredID that can be searched in the two other data files
-    unique_rows = losmasseskred['skredID'].nunique() 
+    unique_rows = losmasseskred_hans['skredID'].nunique() 
     
     # make a list of the skredIDs so we can search the other database for these events
-    rows = losmasseskred["skredID"] 
+    rows = losmasseskred_hans["skredID"] 
 
     #load polygon and release point data
     polygon_data = gpd.read_file(path + "\Skred_Skredhendelse_UtlopUtlosningOmr.shp")
@@ -40,4 +40,4 @@ if __name__ == '__main__':
     # these lines are used to save data files consisting of only losmasseskred and a given time periode (Hans) for loading in GIS
     subset_releasepoint.to_file(path + '\losmasse_hans_startpunkt.shp', driver='ESRI Shapefile')
     subset_poly.to_file(path + '\losmasse_hans_polygon.shp', driver='ESRI Shapefile')
-    slushflows.to_file(path + '\losmasseskred_hans.shp', driver='ESRI Shapefile')
+    losmasseskred_hans.to_file(path + '\losmasseskred_hans.shp', driver='ESRI Shapefile')
