@@ -17,8 +17,8 @@ if __name__ == '__main__':
     date1 = pd.to_datetime('2023-08-06')
     date2 = pd.to_datetime('2023-08-12')
 
-    # point_data = the dataframe before it is cut for the dates, df is the dataframe after
-    point_data_hans = point_data.loc[(point_data['skredTidspunkt'] >= date1) & (point_data['skredTidspunkt'] <= date2)]
+    # point_data = the dataframe before it is cut for the dates, point_data_hans is the dataframe after
+    point_data_hans = point_data.loc[(point_data['Tidspunkt'] >= date1) & (point_data['Tidspunkt'] <= date2)]
 
     # find points in column skredType with tag either 140 (Løsmassedskred, uspesifisert), 142 (Flomskred), 143 (Leirskred), 144 (Jordskred) or 145 (Jordskred, uspesifisert)
     losmasseskred_hans = point_data_hans[{'skredType'== 140}, {'skredType'== 142}, {'skredType'== 143}, {'skredType'== 144}, {'skredType'== 145}] 
